@@ -1,0 +1,29 @@
+# Binaries
+onamae
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output coverage files
+*.out
+
+# Generated images (examples)
+*.png
+!assets/templates/*.png
+
+# Go workspace file
+go.work
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
