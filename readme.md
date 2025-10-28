@@ -7,6 +7,9 @@
 
 <img width="1181" height="425" alt="donokun " src="https://github.com/user-attachments/assets/ec5a995b-6187-465e-a421-7ae1f3113d8e" />
 
+SUZURIで以下のようにマスキングテープを作るといい感じです。
+<iframe height="162" width="375" src="https://suzuri.jp/fnaoya/18840873/masking-tape/15mm/white/embed"></iframe>
+
 ## 機能
 
 - SUZURI推奨サイズ（1181×425px）のマスキングテープ用画像を生成
