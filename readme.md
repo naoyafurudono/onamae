@@ -1,7 +1,11 @@
 # onamae
 
 マステでお名前シール作ったら無限です。
-テンプレをもとにアイコンと名前入れればsuzuri apiで無限お名前シール作れるツールです。
+テンプレをもとにアイコンと名前入れれば無限お名前シール作れるツールです。SUZURIでマスキングテープを作るために最適な画像を生成します。
+
+以下のような感じに生成できます。
+
+<img width="1181" height="425" alt="donokun " src="https://github.com/user-attachments/assets/ec5a995b-6187-465e-a421-7ae1f3113d8e" />
 
 ## 機能
 
@@ -12,7 +16,7 @@
 ## インストール
 
 ```bash
-go build -o onamae cmd/onamae/main.go
+go install github.com/naoyafurudono/onamae/cmd/onamae@latest
 ```
 
 ## 使い方
