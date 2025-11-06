@@ -12,6 +12,8 @@ import (
 var (
 	name     string
 	icon     string
+	name2    string
+	icon2    string
 	template string
 	output   string
 )
@@ -38,6 +40,8 @@ func init() {
 
 	generateCmd.Flags().StringVarP(&name, "name", "n", "", "お名前（必須）")
 	generateCmd.Flags().StringVarP(&icon, "icon", "i", "", "アイコン画像のパス（オプション）")
+	generateCmd.Flags().StringVarP(&name2, "name2", "", "", "2つ目のお名前（オプション）")
+	generateCmd.Flags().StringVarP(&icon2, "icon2", "", "", "2つ目のアイコン画像のパス（オプション）")
 	generateCmd.Flags().StringVarP(&template, "template", "t", "assets/templates/default.png", "テンプレート画像のパス")
 	generateCmd.Flags().StringVarP(&output, "output", "o", "output.png", "出力ファイルのパス")
 
@@ -62,15 +66,37 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// 2つ目のアイコンファイルの存在確認（指定されている場合）
+	if icon2 != "" {
+		if _, err := os.Stat(icon2); os.IsNotExist(err) {
+			return fmt.Errorf("2つ目のアイコンファイルが見つかりません: %s", icon2)
+		}
+	}
+
 	// Generator作成
 	gen := generator.New(template)
 
 	// 生成処理
 	color.Cyan("🎨 お名前シールを生成中...")
 	var err error
-	if icon != "" {
+	if name2 != "" || icon2 != "" {
+		// 2種の絵柄
+		// name2が指定されていない場合はname1を再利用
+		actualName2 := name2
+		if actualName2 == "" {
+			actualName2 = name
+		}
+		// icon2が指定されていない場合はicon1を再利用
+		actualIcon2 := icon2
+		if actualIcon2 == "" {
+			actualIcon2 = icon
+		}
+		err = gen.GenerateWithTwoPatterns(name, icon, actualName2, actualIcon2, output)
+	} else if icon != "" {
+		// 1種の絵柄（アイコン付き）
 		err = gen.GenerateWithNameAndIcon(name, icon, output)
 	} else {
+		// 1種の絵柄（名前のみ）
 		err = gen.GenerateWithName(name, output)
 	}
 
@@ -85,9 +111,26 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	// 詳細情報
 	fmt.Println()
 	color.Yellow("📋 生成情報:")
-	fmt.Printf("   名前: %s\n", name)
-	if icon != "" {
-		fmt.Printf("   アイコン: %s\n", icon)
+	if name2 != "" || icon2 != "" {
+		fmt.Printf("   パターン1 - 名前: %s\n", name)
+		if icon != "" {
+			fmt.Printf("   パターン1 - アイコン: %s\n", icon)
+		}
+		if name2 != "" {
+			fmt.Printf("   パターン2 - 名前: %s\n", name2)
+		} else {
+			fmt.Printf("   パターン2 - 名前: %s (再利用)\n", name)
+		}
+		if icon2 != "" {
+			fmt.Printf("   パターン2 - アイコン: %s\n", icon2)
+		} else if icon != "" {
+			fmt.Printf("   パターン2 - アイコン: %s (再利用)\n", icon)
+		}
+	} else {
+		fmt.Printf("   名前: %s\n", name)
+		if icon != "" {
+			fmt.Printf("   アイコン: %s\n", icon)
+		}
 	}
 	fmt.Printf("   出力: %s\n", output)
 	fmt.Printf("   サイズ: 1181×425px (SUZURI推奨)\n")
