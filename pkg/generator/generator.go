@@ -1,31 +1,63 @@
 package generator
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
 
 	"github.com/fogleman/gg"
+	"github.com/golang/freetype/truetype"
+	"github.com/naoyafurudono/onamae/assets"
 )
 
 // Generator はお名前シール生成器
 type Generator struct {
 	templatePath string
+	font         *truetype.Font
 }
 
 // New は新しいGeneratorを作成します
-func New(templatePath string) *Generator {
+// templatePathが空文字列の場合は埋め込みのデフォルトテンプレートを使用します
+func New(templatePath string) (*Generator, error) {
+	// 埋め込みフォントをパース
+	font, err := truetype.Parse(assets.DefaultFont)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse embedded font: %w", err)
+	}
+
 	return &Generator{
 		templatePath: templatePath,
+		font:         font,
+	}, nil
+}
+
+// loadTemplate はテンプレート画像を読み込みます
+// templatePathが空の場合は埋め込みテンプレートを使用します
+func (g *Generator) loadTemplate() (image.Image, error) {
+	if g.templatePath == "" {
+		// 埋め込みテンプレートを使用
+		img, _, err := image.Decode(bytes.NewReader(assets.DefaultTemplate))
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode embedded template: %w", err)
+		}
+		return img, nil
 	}
+
+	// 指定されたパスからテンプレートを読み込み
+	img, err := gg.LoadImage(g.templatePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load template from %s: %w", g.templatePath, err)
+	}
+	return img, nil
 }
 
 // GenerateWithName はテンプレートに名前を描画した画像を生成します
 func (g *Generator) GenerateWithName(name string, outputPath string) error {
 	// テンプレート画像を読み込み
-	templateImg, err := gg.LoadImage(g.templatePath)
+	templateImg, err := g.loadTemplate()
 	if err != nil {
-		return fmt.Errorf("failed to load template: %w", err)
+		return err
 	}
 
 	// 画像の幅と高さを取得
@@ -37,10 +69,11 @@ func (g *Generator) GenerateWithName(name string, outputPath string) error {
 	dc := gg.NewContext(width, height)
 	dc.DrawImage(templateImg, 0, 0)
 
-	// フォントを設定（IPAゴシックフォント）
-	if err := dc.LoadFontFace("assets/fonts/ipaexg.ttf", 120); err != nil {
-		return fmt.Errorf("failed to load font: %w", err)
-	}
+	// フォントを設定（埋め込みIPAゴシックフォント）
+	face := truetype.NewFace(g.font, &truetype.Options{
+		Size: 120,
+	})
+	dc.SetFontFace(face)
 
 	// テキストの色を設定（ダークグレー）
 	dc.SetColor(color.RGBA{R: 60, G: 60, B: 60, A: 255})
@@ -59,9 +92,9 @@ func (g *Generator) GenerateWithName(name string, outputPath string) error {
 // GenerateWithNameAndIcon はテンプレートに名前とアイコンを描画した画像を生成します
 func (g *Generator) GenerateWithNameAndIcon(name string, iconPath string, outputPath string) error {
 	// テンプレート画像を読み込み
-	templateImg, err := gg.LoadImage(g.templatePath)
+	templateImg, err := g.loadTemplate()
 	if err != nil {
-		return fmt.Errorf("failed to load template: %w", err)
+		return err
 	}
 
 	// アイコン画像を読み込み
@@ -88,10 +121,11 @@ func (g *Generator) GenerateWithNameAndIcon(name string, iconPath string, output
 	iconY := (height - iconSize) / 2
 	dc.DrawImage(resizedIcon, iconX, iconY)
 
-	// フォントを設定（IPAゴシックフォント）
-	if err := dc.LoadFontFace("assets/fonts/ipaexg.ttf", 120); err != nil {
-		return fmt.Errorf("failed to load font: %w", err)
-	}
+	// フォントを設定（埋め込みIPAゴシックフォント）
+	face := truetype.NewFace(g.font, &truetype.Options{
+		Size: 120,
+	})
+	dc.SetFontFace(face)
 
 	// テキストの色を設定（ダークグレー）
 	dc.SetColor(color.RGBA{R: 60, G: 60, B: 60, A: 255})
@@ -112,9 +146,9 @@ func (g *Generator) GenerateWithNameAndIcon(name string, iconPath string, output
 // GenerateWithTwoPatterns はテンプレートを2分割して、それぞれに名前とアイコンを描画した画像を生成します
 func (g *Generator) GenerateWithTwoPatterns(name1, icon1, name2, icon2, outputPath string) error {
 	// テンプレート画像を読み込み
-	templateImg, err := gg.LoadImage(g.templatePath)
+	templateImg, err := g.loadTemplate()
 	if err != nil {
-		return fmt.Errorf("failed to load template: %w", err)
+		return err
 	}
 
 	// 画像の幅と高さを取得
@@ -165,10 +199,11 @@ func (g *Generator) drawVerticalPattern(dc *gg.Context, name, iconPath string, o
 		iconY := int(float64(height) * 0.05) // 上から5%の位置
 		dc.DrawImage(resizedIcon, iconX, iconY)
 
-		// フォントを設定
-		if err := dc.LoadFontFace("assets/fonts/ipaexg.ttf", 70); err != nil {
-			return fmt.Errorf("failed to load font: %w", err)
-		}
+		// フォントを設定（埋め込みIPAゴシックフォント）
+		face := truetype.NewFace(g.font, &truetype.Options{
+			Size: 70,
+		})
+		dc.SetFontFace(face)
 
 		// テキストの色を設定
 		dc.SetColor(color.RGBA{R: 60, G: 60, B: 60, A: 255})
@@ -179,10 +214,11 @@ func (g *Generator) drawVerticalPattern(dc *gg.Context, name, iconPath string, o
 		dc.DrawStringAnchored(name, textX, textY, 0.5, 0)
 	} else {
 		// アイコンなしの場合、名前だけを中央に配置
-		// フォントを設定
-		if err := dc.LoadFontFace("assets/fonts/ipaexg.ttf", 70); err != nil {
-			return fmt.Errorf("failed to load font: %w", err)
-		}
+		// フォントを設定（埋め込みIPAゴシックフォント）
+		face := truetype.NewFace(g.font, &truetype.Options{
+			Size: 70,
+		})
+		dc.SetFontFace(face)
 
 		// テキストの色を設定
 		dc.SetColor(color.RGBA{R: 60, G: 60, B: 60, A: 255})

@@ -42,7 +42,7 @@ func init() {
 	generateCmd.Flags().StringVarP(&icon, "icon", "i", "", "アイコン画像のパス（オプション）")
 	generateCmd.Flags().StringVarP(&name2, "name2", "", "", "2つ目のお名前（オプション）")
 	generateCmd.Flags().StringVarP(&icon2, "icon2", "", "", "2つ目のアイコン画像のパス（オプション）")
-	generateCmd.Flags().StringVarP(&template, "template", "t", "assets/templates/default.png", "テンプレート画像のパス")
+	generateCmd.Flags().StringVarP(&template, "template", "t", "", "テンプレート画像のパス（指定しない場合はデフォルトテンプレートを使用）")
 	generateCmd.Flags().StringVarP(&output, "output", "o", "output.png", "出力ファイルのパス")
 
 	generateCmd.MarkFlagRequired("name")
@@ -54,9 +54,11 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("名前を指定してください（--name）")
 	}
 
-	// テンプレートファイルの存在確認
-	if _, err := os.Stat(template); os.IsNotExist(err) {
-		return fmt.Errorf("テンプレートファイルが見つかりません: %s", template)
+	// テンプレートファイルの存在確認（指定されている場合のみ）
+	if template != "" {
+		if _, err := os.Stat(template); os.IsNotExist(err) {
+			return fmt.Errorf("テンプレートファイルが見つかりません: %s", template)
+		}
 	}
 
 	// アイコンファイルの存在確認（指定されている場合）
@@ -74,11 +76,14 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Generator作成
-	gen := generator.New(template)
+	gen, err := generator.New(template)
+	if err != nil {
+		color.Red("✗ Generatorの作成に失敗しました: %v", err)
+		return err
+	}
 
 	// 生成処理
 	color.Cyan("🎨 お名前シールを生成中...")
-	var err error
 	if name2 != "" || icon2 != "" {
 		// 2種の絵柄
 		// name2が指定されていない場合はname1を再利用
